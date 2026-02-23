@@ -163,19 +163,28 @@ export function generateGDPData() {
   return data;
 }
 
+const FED_HIKE_START_MONTHS = 36;   // months ago when hike cycle began
+const FED_HIKE_END_MONTHS = 12;     // months ago when hike cycle ended
+const FED_MAX_RATE = 5.5;           // peak fed funds rate
+const FED_FLOOR_RATE = 4.5;         // floor rate after cuts begin
+const FED_INITIAL_RATE = 0.25;      // rate before hike cycle
+const FED_STEP_SIZE = 0.25;         // basis-point step per hike/cut
+const FED_HIKE_PROBABILITY = 0.6;   // probability of a hike on any given meeting
+const FED_CUT_PROBABILITY = 0.8;    // probability of holding (not cutting) on any meeting
+
 export function generateFedFundsData() {
   const months = 60;
   const data = [];
   const now = new Date();
-  const keyRates: Record<string, number> = {};
   // Simulate Fed rate hike cycle 2022-2023
-  let rate = 0.25;
+  let rate = FED_INITIAL_RATE;
   for (let i = months; i >= 0; i--) {
     const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-    const key = `${d.getFullYear()}-${d.getMonth()}`;
     // Rate hikes starting ~24 months ago
-    if (i <= 36 && i > 12) rate = Math.min(5.5, rate + (Math.random() > 0.6 ? 0.25 : 0));
-    if (i <= 12) rate = Math.max(4.5, rate - (Math.random() > 0.8 ? 0.25 : 0));
+    if (i <= FED_HIKE_START_MONTHS && i > FED_HIKE_END_MONTHS)
+      rate = Math.min(FED_MAX_RATE, rate + (Math.random() > FED_HIKE_PROBABILITY ? FED_STEP_SIZE : 0));
+    if (i <= FED_HIKE_END_MONTHS)
+      rate = Math.max(FED_FLOOR_RATE, rate - (Math.random() > FED_CUT_PROBABILITY ? FED_STEP_SIZE : 0));
     data.push({
       date: d.toLocaleDateString("en-US", { month: "short", year: "2-digit" }),
       rate: +rate.toFixed(2),
